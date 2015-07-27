@@ -55,6 +55,7 @@ $shorts .= "u:";
 $shorts .= "p:";
 $shorts .= "r:";
 $shorts .= "t:";
+$shorts .= "v:";
 
 $longs  = array(
     "server:",    //-s|--server [required] vCloud Director server IP/hostname
@@ -62,6 +63,7 @@ $longs  = array(
     "pswd:",      //-p|--pswd   [required] vCloud Director login password
     "report:",    //-r|--report [optional] vCloud Director output name
     "type:",      //-t|--type   [optional] vCloud Director System or Org report type
+    "sdkver:",	  //-v|--sdkver [required] vCloud SDK Version
 );
 
 $opts = getopt($shorts, $longs);
@@ -103,15 +105,30 @@ foreach (array_keys($opts) as $opt) switch ($opt)
     case "type":
         $type = $opts["type"];
         break;
+
+    case "v":
+    	$sdkver = $opts['v'];
+    	break;
+    case "sdkver":
+    	$sdkver = $opts["sdkver"];
+    	break;
 }
 
 // required parameters validation
-if(!isset($server) || !isset($user) || !isset($type))
+if(!isset($server) || !isset($user) || !isset($type) || !isset($sdkver))
 {
     echo "Error: missing required parameters\n";
     usage();
     exit(1);
 }
+
+// validate vCloud SDK Version set
+if (!($sdkver == "5.1") && !($sdkver =="5.5") )
+{
+    echo "Error: vCloud SDK Version parameter is invalid\n";
+    usage();
+    exit(1);
+};
 
 // prompt for password if not provided
 if(!isset($pswd)) {
@@ -128,7 +145,7 @@ $httpConfig = array('ssl_verify_peer'=>false, 'ssl_verify_host'=>false);
 
 // login
 $service = VMware_VCloud_SDK_Service::getService();
-$service->login($server, array('username'=>$user, 'password'=>$pswd), $httpConfig);
+$service->login($server, array('username'=>$user, 'password'=>$pswd), $httpConfig, $sdkver);
 
 // create SDK Query object
 $sdkQuery = VMware_VCloud_SDK_Query::getInstance($service);
@@ -2156,20 +2173,21 @@ function usage()
     echo "     This script provides a detail report of your VMware vCloud Director system\n";
     echo "\n";
     echo "  [Usage]\n";
-    echo "     # php vCloudReport.php -s <server> -u <username> -p <password> [Options]\n";
+    echo "     # php vCloudReport.php -s <server> -u <username> -p <password> -t <type> -v <version>[Options]\n";
     echo "\n";
     echo "     -s|--server <IP|hostname> [req] IP or hostname of the vCloud Director.\n";
     echo "     -u|--user <username>      [req] User name in the form user@organization for the vCloud Director instance.\n";
     echo "     -p|--pswd <password>      [req] Password for user.\n";
     echo "     -t|--type <type>          [req] Type of report [system|orgadmin|orguser].\n";
+    echo "     -v|--sdkver <version>     [req] vCloud SDK Version [5.1|5.5].\n";
     echo "\n";
     echo "  [Options]\n";
     echo "     -r|--report <reportName>      [opt*] Name of html output file (e.g. vCloudReport.html).\n";
     echo "\n";
     echo "  [Examples]\n";
-    echo "     # php query.php -s 127.0.0.1 -u admin@system -p password -t system\n";
-    echo "     # php query.php -s 127.0.0.1 -u admin@coke   -p password -t orgadmin\n";
-    echo "     # php query.php -s 127.0.0.1 -u admin@pepsi  -p password -t orguser\n";
+    echo "     # php query.php -s 127.0.0.1 -u admin@system -p password -t system -v 5.5\n";
+    echo "     # php query.php -s 127.0.0.1 -u admin@coke   -p password -t orgadmin -v 5.5\n";
+    echo "     # php query.php -s 127.0.0.1 -u admin@pepsi  -p password -t orguser -v 5.5\n";
     echo "\n";
 }
 
